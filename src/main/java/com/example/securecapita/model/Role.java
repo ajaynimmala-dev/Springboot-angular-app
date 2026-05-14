@@ -20,6 +20,6 @@ public class Role {
     @Id
     public Long id;
     private String name;
-    private String permissions;
+    private String permission;
 
 }

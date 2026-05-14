@@ -58,9 +58,6 @@ public class UserRepoImplementation implements UserRepository<User> {
             return user;
             //if any error throw exception with a proper message
         }
-        catch(EmptyResultDataAccessException exception){
-            throw new ApiException("No role found by name: "+ROLE_USER.name());
-        }
         catch(Exception exception){
             throw new ApiException(" An error occurred try again");
         }
