@@ -1,12 +1,15 @@
 package com.example.securecapita.repo.implementation;
 
 import com.example.securecapita.exception.ApiException;
-import com.example.securecapita.model.*;
-import com.example.securecapita.repo.*;
+import com.example.securecapita.model.Role;
+import com.example.securecapita.model.User;
+import com.example.securecapita.repo.RoleRepository;
+import com.example.securecapita.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.namedparam.*;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -43,12 +46,14 @@ public class UserRepoImplementation implements UserRepository<User> {
             SqlParameterSource parameters = getSqlParameters(user);
             //save new user
             jdbc.update(INSERT_USER_QUERY,parameters,holder);
-            user.setId(requireNonNull(holder.getKey()).longValue());
+            Map<String, Object> keys = holder.getKeys();
+            user.setId(((Number) keys.get("id")).longValue());
             //Add role to user
             roleRepository.addRoleToUser(user.getId(),ROLE_USER.name());
             //send verification url
             String verificationUrl = getVerificationUrl(UUID.randomUUID().toString(),ACCOUNT.getType());
             //save url in verification table
+            //System.out.println(verificationUrl);
             jdbc.update(INSERT_ACCOUNT_VERIFICATION_URL_QUERY,Map.of("userId",user.getId(),"url",verificationUrl));
             //send email to user with verification url
             //emailService.sendVerification(user.getFirstName(),user.getEmail(),verificationUrl,ACCOUNT.getType());
@@ -59,6 +64,7 @@ public class UserRepoImplementation implements UserRepository<User> {
             //if any error throw exception with a proper message
         }
         catch(Exception exception){
+            log.error(exception.getMessage());
             throw new ApiException(" An error occurred try again");
         }
     }
