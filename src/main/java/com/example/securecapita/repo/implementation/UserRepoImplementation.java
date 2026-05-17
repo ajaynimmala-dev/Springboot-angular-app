@@ -3,15 +3,21 @@ package com.example.securecapita.repo.implementation;
 import com.example.securecapita.exception.ApiException;
 import com.example.securecapita.model.Role;
 import com.example.securecapita.model.User;
+import com.example.securecapita.model.UserPrincipal;
 import com.example.securecapita.repo.RoleRepository;
 import com.example.securecapita.repo.UserRepository;
+import com.example.securecapita.rowmapper.UserRowMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -24,12 +30,11 @@ import java.util.UUID;
 import static com.example.securecapita.enumeration.RoleType.ROLE_USER;
 import static com.example.securecapita.enumeration.VerificationType.ACCOUNT;
 import static com.example.securecapita.query.UserQuery.*;
-import static java.util.Objects.requireNonNull;
 
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-public class UserRepoImplementation implements UserRepository<User> {
+public class UserRepoImplementation implements UserRepository<User>, UserDetailsService {
 
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
@@ -105,4 +110,34 @@ public class UserRepoImplementation implements UserRepository<User> {
         return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify"+type+"/"+key).toUriString();
     }
 
+    //is the method of UserDetailsService
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = getUserByEmail(email);
+        if(user == null){
+            log.info("user not found in the database");
+            throw new UsernameNotFoundException("user not found in the database");
+        }
+        else{
+            log.info("user found in the database");
+            return new UserPrincipal(user,roleRepository.getRoleByUserId(user.getId()).getPermission());
+        }
+
+    }
+
+    @Override
+    public User getUserByEmail(String email) {
+        try {
+            User user = jdbc.queryForObject(SELECT_BY_EMAIL_QUERY, Map.of("email", email), new UserRowMapper());
+            return user;
+        }
+        catch(EmptyResultDataAccessException exception){
+            log.error(exception.getMessage());
+            throw new ApiException("No User Found by Email "+email);
+        }
+        catch(Exception exception){
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred.Please try again");
+        }
+    }
 }

@@ -2,6 +2,7 @@ package com.example.securecapita.configuration;
 
 import com.example.securecapita.handler.CustomAccessDeniedHandler;
 import com.example.securecapita.handler.CustomAuthenticationEntryPointHandler;
+import com.example.securecapita.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -25,7 +27,7 @@ public class SecurityConfig{
     private  final BCryptPasswordEncoder encoder;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPointHandler customAuthenticationEntryPointHandler;
-
+    private final UserDetailsService userDetailsService;
     private static final String[] PUBLIC_URLS = {};
 
     @Bean
@@ -52,7 +54,7 @@ public class SecurityConfig{
     @Bean()
     public AuthenticationManager authenticationManager(){
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(null);
+        authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(encoder);
         return new ProviderManager(authProvider);
     }
