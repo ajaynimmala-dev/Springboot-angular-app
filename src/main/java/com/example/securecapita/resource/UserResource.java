@@ -36,7 +36,9 @@ public class UserResource{
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginForm.getEmail(),loginForm.getPassword()));
+        System.out.println("hh");
         UserDTO userDTO = userService.getUserByEmail(loginForm.getEmail());
+        System.out.println("as");
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())

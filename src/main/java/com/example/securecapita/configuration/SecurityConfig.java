@@ -28,14 +28,13 @@ public class SecurityConfig{
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPointHandler customAuthenticationEntryPointHandler;
     private final UserDetailsService userDetailsService;
-    private static final String[] PUBLIC_URLS = {};
+    private static final String[] PUBLIC_URLS = {"/user/login/**"};
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)throws Exception {
         http
                 .csrf(csrf->csrf.disable())
-                .cors(cors->cors.disable())
-                .authorizeHttpRequests(auth->auth.anyRequest().permitAll());
+                .cors(cors->cors.disable());
         http
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http
