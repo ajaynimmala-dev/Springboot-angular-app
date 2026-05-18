@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,14 +36,19 @@ public class UserResource{
 
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginForm.getEmail(),loginForm.getPassword()));
-        System.out.println("hh");
+        UsernamePasswordAuthenticationToken temp = new UsernamePasswordAuthenticationToken(loginForm.getEmail(),loginForm.getPassword());
+        System.out.println("gg");
+        try {
+            Authentication t = authenticationManager.authenticate(temp);
+        }
+        catch(Exception e){
+            System.out.println(e.getMessage());
+        }
         UserDTO userDTO = userService.getUserByEmail(loginForm.getEmail());
-        System.out.println("as");
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(Map.of("user",userDTO))
+                        .data(Map.of("user", userDTO != null ? userDTO : new UserDTO()))
                         .message("Login Success")
                         .status(OK)
                         .statusCode(OK.value())

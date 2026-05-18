@@ -1,5 +1,6 @@
 package com.example.securecapita.model;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -11,13 +12,14 @@ import java.util.List;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
+@Data
 @RequiredArgsConstructor
 public class UserPrincipal implements UserDetails {
 
     private final User user;
     private final String permissions;
-    @Override
 
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return stream(permissions.split(",")).map(SimpleGrantedAuthority::new).collect(toList());
     }
