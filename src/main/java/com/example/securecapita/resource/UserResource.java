@@ -37,7 +37,6 @@ public class UserResource{
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
         UsernamePasswordAuthenticationToken temp = new UsernamePasswordAuthenticationToken(loginForm.getEmail(),loginForm.getPassword());
-        System.out.println("gg");
         try {
             Authentication t = authenticationManager.authenticate(temp);
         }
@@ -45,14 +44,7 @@ public class UserResource{
             System.out.println(e.getMessage());
         }
         UserDTO userDTO = userService.getUserByEmail(loginForm.getEmail());
-        return ResponseEntity.ok().body(
-                HttpResponse.builder()
-                        .timeStamp(now().toString())
-                        .data(Map.of("user", userDTO != null ? userDTO : new UserDTO()))
-                        .message("Login Success")
-                        .status(OK)
-                        .statusCode(OK.value())
-                        .build());
+        return userDTO.isUsingMfa()?sendVerificationCode(userDTO):sendResponse(userDTO);
     }
 
     @PostMapping("/register")
@@ -71,5 +63,28 @@ public class UserResource{
 
     private URI geUri() {
         return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
+    }
+
+    private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO userDTO) {
+        userService.sendVerificationCode(userDTO);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", userDTO != null ? userDTO : new UserDTO()))
+                        .message("Verification code is sent")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    private ResponseEntity<HttpResponse> sendResponse(UserDTO userDTO) {
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", userDTO != null ? userDTO : new UserDTO()))
+                        .message("Login Success")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
     }
 }

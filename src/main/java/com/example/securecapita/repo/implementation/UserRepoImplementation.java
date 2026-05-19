@@ -1,5 +1,6 @@
 package com.example.securecapita.repo.implementation;
 
+import com.example.securecapita.dto.UserDTO;
 import com.example.securecapita.exception.ApiException;
 import com.example.securecapita.model.Role;
 import com.example.securecapita.model.User;
@@ -22,14 +23,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.example.securecapita.enumeration.RoleType.ROLE_USER;
 import static com.example.securecapita.enumeration.VerificationType.ACCOUNT;
 import static com.example.securecapita.query.UserQuery.*;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.time.DateFormatUtils.format;
+import static org.apache.commons.lang3.time.DateUtils.addDays;
 
 @Repository
 @RequiredArgsConstructor
@@ -39,6 +40,7 @@ public class UserRepoImplementation implements UserRepository<User>, UserDetails
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
     private final BCryptPasswordEncoder encoder;
+    private final String DATE_FORMAT = "yyyy-MM-dd hh:mm:ss";
 
     @Override
     public User create(User user) {
@@ -134,6 +136,21 @@ public class UserRepoImplementation implements UserRepository<User>, UserDetails
         catch(EmptyResultDataAccessException exception){
             log.error(exception.getMessage());
             throw new ApiException("No User Found by Email "+email);
+        }
+        catch(Exception exception){
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred.Please try again");
+        }
+    }
+
+    @Override
+    public void sendVerificationCode(UserDTO userDTO) {
+        String expirationDate = format(addDays(new Date(),1),DATE_FORMAT);
+        String verificationCode = randomAlphabetic(8).toUpperCase();
+        try {
+            jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID, Map.of("id", userDTO.getId()));
+            jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of("userId", userDTO.getId(),"code",verificationCode,"expirationDate",expirationDate));
+            sendSMS(userDTO.getPhone(),"From: Server \n Verification code\n "+verificationCode);
         }
         catch(Exception exception){
             log.error(exception.getMessage());
